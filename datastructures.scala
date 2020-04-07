@@ -43,4 +43,5 @@ object List {
     case Nil => z
     case Cons(x, xs) => foldLeft(xs, f(z, x))(f)
   }
+  def reverse[A](as: List[A]) : List[A] = foldLeft(as, List[A]())((b, a) => Cons(a, b))
 }
