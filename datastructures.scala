@@ -34,13 +34,27 @@ object List {
 
   def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
     case Nil => z
-    case Cons(x, xs) => foldLeft(as, z)((a, b) => f(b, a))
+    case Cons(x, xs) => f(x, foldRight(xs, z)(f))
   }
 
+  // foldRight in terms of foldLeft
+  // def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
+  //   case Nil => z
+  //   case Cons(x, xs) => foldLeft(as, z)((a, b) => f(b, a))
+  // }
+
   def length[A](as: List[A]) : Int = foldRight(as, 0)((_, acc) => acc + 1)
-  def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B) : B = as match {
+
+  // foldLeft in terms of foldRight
+  // def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B) : B = as match {
+  //   case Nil => z
+  //   case Cons(x, xs) => foldRight(xs, f(z, x))((b, a) => f(a, b))
+  // }
+
+  def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B) = as match {
     case Nil => z
     case Cons(x, xs) => foldLeft(xs, f(z, x))(f)
   }
+
   def reverse[A](as: List[A]) : List[A] = foldLeft(as, List[A]())((b, a) => Cons(a, b))
 }
