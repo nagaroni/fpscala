@@ -51,7 +51,7 @@ object List {
   //   case Cons(x, xs) => foldRight(xs, f(z, x))((b, a) => f(a, b))
   // }
 
-  def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B) = as match {
+  def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B) : B = as match {
     case Nil => z
     case Cons(x, xs) => foldLeft(xs, f(z, x))(f)
   }
