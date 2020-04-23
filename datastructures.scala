@@ -46,8 +46,42 @@ object List {
 
   def reverse[A](as: List[A]) : List[A] = foldLeft(as, List[A]())((b, a) => Cons(a, b))
   def append[A](as: List[A], item: A) : List[A] =
-    foldRight(as, List[A]())((a, b) => Cons(a, b))
+    foldRight(as, List(item))((a, b) => Cons(a, b))
 
   def map[A, B](as: List[A])(f: (A) => B) : List[B] =
     foldRight(as, List[B]())((a, b) => Cons(f(a), b))
-}
+
+  def flatten[A](as: List[List[A]]) : List[A] = 
+    foldRight(as, List[A]())((a, b) => foldRight(a, b)((c, d) => Cons(c, d)))
+
+  def plusOne(as: List[Int]) : List[Int] = map(as)(_ + 1)
+
+  def doubleToString(as: List[Double]) : List[String] = map(as)(_.toString())
+
+  def filter[A](as: List[A])(f: (A) => Boolean) : List[A] = {
+    foldRight(as, List[A]())((a, b) => f(a) match {
+        case true => Cons(a, b)
+        case false => b
+      })
+  }
+
+  def flatMap[A, B](as: List[A])(f: (A) => List[B]) : List[B] =
+    foldRight(as, List[B]())((a, b) => f(a) match {
+      case Cons(h, Cons(t, Nil)) => Cons(h, Cons(t, b))
+      case _ => b
+    })
+
+  def filterWithFlatMap[A](as: List[A])(f: (A) => Boolean) : List[A] = {
+    flatMap(as)((a) => f(a) match {
+      case true => List(a, a)
+      case false => Nil
+    })
+  }
+
+  def zipSum[A, B](one: List[A], two: List[A]) : List[B] = zipWith(one, two)(_ + _)
+
+  def zipWith[A, B](list1: List[A], list2: List[A])(f: (A, A) => B) : List[B] = List(list1, list2) match {
+    case Cons(Cons(h, t), Cons(Cons(g, j), Nil)) => Cons(f(h, g), zipWith(t, j)(f))
+    case _ => List[B]()
+  }
+} 
