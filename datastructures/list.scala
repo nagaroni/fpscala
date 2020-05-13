@@ -1,4 +1,4 @@
-package fpscala.datastructures
+package fpscala.datastructures.list
 
 sealed trait List[+A]
 case object Nil extends List[Nothing]

@@ -1,4 +1,4 @@
-package fpscala.tree
+package fpscala.datastructures.tree
 
 sealed trait Tree[+A]
 case class Leaf[A](value: A) extends Tree[A]
