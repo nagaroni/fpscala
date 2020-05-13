@@ -84,4 +84,7 @@ object List {
     case Cons(Cons(h, t), Cons(Cons(g, j), Nil)) => Cons(f(h, g), zipWith(t, j)(f))
     case _ => List[B]()
   }
-} 
+
+  def hasSubsquence[A](sub: List[A], sup: List[A]) : Boolean = {
+  }
+}
