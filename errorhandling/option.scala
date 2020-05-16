@@ -17,3 +17,11 @@ sealed trait Option[+A] {
 }
 case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
+
+
+// use Option to calculate variance
+def variance(xs: Seq[Double]): Option[Double] =  {
+  Some(xs).filter(_.size > 0)
+          .map(sq => sq.sum / sq.size)
+          .map(mean => xs.map(x => math.pow(x - mean, 2)).sum / xs.size)
+}
