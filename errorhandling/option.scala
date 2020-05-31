@@ -22,7 +22,45 @@ case object None extends Option[Nothing]
 
 // use Option to calculate variance
 def variance(xs: Seq[Double]): Option[Double] =  {
-  Some(xs).filter(_.size > 0)
-          .map(sq => sq.sum / sq.size)
-          .map(mean => xs.map(x => math.pow(x - mean, 2)).sum / xs.size)
+  Some(xs).flatMap((sq) => 
+    try {
+      val size = sq.size
+      val mean = sq.sum / size
+      Some(sq.map((x) => math.pow(x - mean, 2)).sum / size)
+    } catch { case _ : Throwable => None }
+  )
+}
+
+def lift[A, B](f: A => B) : Option[A] => Option[B] = _ map f
+
+def Try[A](a: => A) : Option[A] =
+  try(Some(a))
+  catch { case e : Exception => None }
+
+def insuranceRateQuote(age: Int, numberOfSpeedsTicket: Int): Double =
+  Some(numberOfSpeedsTicket).filter(_ > 0).map(divisor => age / numberOfSpeedsTicket.toDouble ).getOrElse(0.0)
+
+def parseInsuranceRateQuote(age: String, numberOfSpeedsTicket: String): Option[Double] =  {
+  val optAge : Option[Int] = Try(age.toInt)
+  val optTickets : Option[Int] = Try(numberOfSpeedsTicket.toInt)
+  map2(optAge, optTickets)(insuranceRateQuote)
+}
+
+def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C) : Option[C] = {
+  // val ff = lift((a: A) => lift((b: B) => f(a, b)))
+  // ff(a).flatMap(lifted => lifted(b))
+  // a.map(value => (b: B) => f(value, b)).flatMap(func => lift(func)(b))
+  a.flatMap(aa => b.map(bb => f(aa, bb)))
+}
+
+def sequence[A](a: List[Option[A]]): Option[List[A]] = {
+  Some(a).filter(_.size > 0).map(_.head).flatMap(value => {
+      val tail = a.tail
+      if(tail.isEmpty) {
+        value.map(v => List(v))
+      } else {
+        sequence(tail).flatMap(t => value.map(v => List(v) ::: t))
+      }
+    }
+  )
 }
