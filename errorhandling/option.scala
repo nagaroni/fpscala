@@ -59,8 +59,23 @@ def sequence[A](a: List[Option[A]]): Option[List[A]] = {
       if(tail.isEmpty) {
         value.map(v => List(v))
       } else {
-        sequence(tail).flatMap(t => value.map(v => List(v) ::: t))
+        sequence(tail).flatMap(t => value.map(v => v :: t))
       }
     }
   )
 }
+
+def traverse[A, B](a: List[A])(f: A => Option[B]) : Option[List[B]] = a match {
+  case head :: tail => f(head).flatMap(value => traverse(tail)(f).map(t => value :: t))
+  case Nil => Some(List[B]())
+}
+
+def sequence2[A](a: List[Option[A]]) : Option[List[A]] = {
+  traverse(a)(x => x.map(v => v))
+}
+
+def map2[A, B,C](a: Option[A], b: Option[B])(f: (A, B) => C) : Option[C] = 
+  for {
+    aa <- a
+    bb <- b
+  } yield f(aa, bb)
