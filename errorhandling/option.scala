@@ -1,4 +1,4 @@
-package fpscala.datastructures.option;
+package fpscala.errorhandling.option;
 
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B] = this match {
