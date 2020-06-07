@@ -7,11 +7,33 @@ sealed trait Stream[+A] {
   }
 
   def toList: List[A] = this match {
-    def go(as: Stream[A]): List[A] = as match {
-      case Cons(h, t) => h() :: go(t)
-      case _ => Nil
-    }
-    go(this)
+    case Cons(h, t) => h() :: t().toList
+    case _ => Nil
+  }
+
+  def take(n: Int) : Stream[A] = this match {
+    case Cons(h, t) => if (n == 0) Empty else Cons(h, () => t().take(n - 1))
+    case _ => Empty
+  }
+
+  def drop(n: Int) : Stream[A] = this match {
+    case Cons(h, t) => if (n == 1) t() else t().drop(n - 1)
+    case _ => Empty
+  }
+
+  def takeWhile(p: A => Boolean): Stream[A] = this match {
+    case Cons(h, t) => if(p(h())) Cons(h, () => t().takeWhile(p)) else Empty
+    case _ => Empty
+  }
+
+  def exists(p: A => Boolean) : Boolean = this match {
+    case Cons(h, t) => p(h()) || t().exists(p)
+    case _ => false
+  }
+
+  def foldRight[B](z: => B)(f: (A, => B) => B) : B = this match {
+    case Cons(h, t) => f(h(), t().foldRight(z)(f))
+    case _ => z
   }
 }
 case object Empty extends Stream[Nothing]
