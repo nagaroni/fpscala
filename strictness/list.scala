@@ -36,11 +36,20 @@ sealed trait Stream[+A] {
     case _ => z
   }
 
-  def forAll(p: A => Boolean) : Boolean = 
+  def forAll(p: A => Boolean) : Boolean =
     foldRight(true)((a, b) => p(a) && b)
 
-  def takeWhile2(p: A => Boolean) : Stream[A] = 
+  def takeWhile2(p: A => Boolean) : Stream[A] =
     foldRight(Empty.asInstanceOf[Stream[A]])((a, b) => if(p(a)) Cons(() => a, () => b) else Empty)
+
+  def headOption2: Option[A] =
+    foldRight(None.asInstanceOf[Option[A]])((a, _) => Some(a))
+
+  def map[B](f: A => B) : Stream[B] =
+    foldRight(Empty.asInstanceOf[Stream[B]])((a, b) => Cons(() => f(a), () => b))
+
+  def filter(f: A => Boolean) : Stream[A] =
+    foldRight(Empty.asInstanceOf[Stream[A]])((a, b) => if(f(a)) Cons(() => a, () => b) else b)
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
