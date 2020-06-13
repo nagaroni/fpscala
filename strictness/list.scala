@@ -56,6 +56,25 @@ sealed trait Stream[+A] {
 
   def flatMap[B](f: A => Stream[B]) : Stream[B] =
     foldRight(Empty.asInstanceOf[Stream[B]])((h, t) => f(h) append t)
+
+  def mapWithUnfold[B](f: A => B) : Stream[B] =
+    Stream.unfold(this)((stream) => stream match {
+      case Cons(h, t) => Some((f(h()), t()))
+      case _ => None
+    })
+
+  def takeWithUnfold(n: Int) : Stream[A] =
+    Stream.unfold((n, this))(x => x._2 match {
+      case Cons(h, t) => if (x._1 == 0) None else Some((h(), (x._1 - 1, t())))
+      case _ => None
+    })
+
+  def takeWhileWithUnfold(f: A => Boolean) : Stream[A] =
+    Stream.unfold((f, this))(x => x match {
+      case (ff, Cons(h, t)) => if(ff(h())) Some((h(), (ff, t()))) else None
+      case _ => None
+    })
+
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
