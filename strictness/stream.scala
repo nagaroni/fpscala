@@ -81,9 +81,21 @@ sealed trait Stream[+A] {
       case _ => None
     })
 
-  def zipAll[B](st: Stream[B]) : Stream[(Option[A], Option[B])] =
-    zipWith(st)((a,b) => (Some(a), Some(b)))
+  // def zipAll[B](st: Stream[B]): Stream[(Option[A], Option[B])] = 
+    // this zipWith(st)((a, b) => (Some(a), Some(b)))
 
+ // Option[(A, S)]
+  def hasSubsequence[AA >: A](st: Stream[AA]) : Boolean = {
+    def walk(a: Stream[A], b: Stream[AA]) : Option[Stream[Boolean]] = {
+      Stream.unfold((this, st))((x) => x match {
+        case (Empty, _) => Some((true, Empty))
+        case (Cons(h, t), Cons(hh, tt)) if h() == hh() => walk(t(), tt())
+        case _ => None
+      })
+    }
+
+    walk(this, st).headOption.getOrElse(false)
+  }
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
