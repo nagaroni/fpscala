@@ -81,25 +81,42 @@ sealed trait Stream[+A] {
       case _ => None
     })
 
-  // def zipAll[B](st: Stream[B]): Stream[(Option[A], Option[B])] = 
-    // this zipWith(st)((a, b) => (Some(a), Some(b)))
+  def zipAll[B](st: Stream[B]): Stream[(Option[A], Option[B])] = {
+    Stream.unfold((this, st))(t => t match {
+      case (Cons(h, t), Cons(hh, tt)) => Some(((Some(h()), Some(hh())),(t(), tt())))
+      case (Cons(h, t), Empty) => Some(((Some(h()), None), (t(), Stream.empty[B])))
+      case (Empty, Cons(hh, tt)) => Some(((None, Some(hh())), (Stream.empty[A], tt())))
+      case _ => None
+    })
+  }
 
- // Option[(A, S)]
-  def hasSubsequence[AA >: A](st: Stream[AA]) : Boolean = {
-    def walk(a: Stream[A], b: Stream[AA]) : Option[Stream[Boolean]] = {
-      Stream.unfold((this, st))((x) => x match {
-        case (Empty, _) => Some((true, Empty))
-        case (Cons(h, t), Cons(hh, tt)) if h() == hh() => walk(t(), tt())
-        case _ => None
-      })
-    }
+  def startsWith[A](sub: Stream[A]) : Boolean = {
+    Stream.unfold((this, sub))(tuple => tuple match {
+      case (Cons(h, t), Cons(hh, tt)) => Some((h() == hh(), (t(), tt())))
+      case (Cons(h, t), Empty) => Some((true, (Empty, Empty)))
+      case _ => None
+    }).forAll(x => x)
+  }
 
-    walk(this, st).headOption.getOrElse(false)
+  def tails: Stream[Stream[A]] = {
+    Stream.unfold(this)(stream => stream match {
+      case Cons(h, t) => Some((Stream.cons(h(), t()), t()))
+      case _ => None
+    })
+  }
+
+  def hasSubsequence[A](s: Stream[A]) : Boolean = tails exists(_ startsWith s)
+
+  def scanRight[B](z: B)(f: (A, => B) => B) : Stream[B] = {
+    Stream.unfold(this)(s => s match {
+      case Cons(h, t) => Some((Cons(h, t).foldRight(z)(f), t()))
+      case _ => None
+    })
   }
 }
+
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
-
 
 object Stream {
   def cons[A](hd: => A, tl: Stream[A]) : Stream[A] = {
