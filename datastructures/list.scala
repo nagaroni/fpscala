@@ -78,13 +78,23 @@ object List {
     })
   }
 
-  def zipSum[A, B](one: List[A], two: List[A]) : List[B] = zipWith(one, two)(_ + _)
+  // def zipSum[A, B](one: List[A], two: List[A]) : List[B] = zipWith(one : A, two : B)(_ + _)
 
   def zipWith[A, B](list1: List[A], list2: List[A])(f: (A, A) => B) : List[B] = List(list1, list2) match {
     case Cons(Cons(h, t), Cons(Cons(g, j), Nil)) => Cons(f(h, g), zipWith(t, j)(f))
     case _ => List[B]()
   }
 
-  def hasSubsquence[A](sub: List[A], sup: List[A]) : Boolean = {
+  def hasSubsequence[A](sub: List[A], sup: List[A]) : Boolean = (sub, sup) match {
+    case (Cons(h, t), Cons(hh, tt)) => {
+      if(h == hh) {
+        hasSubsequence(t, tt)
+      } else {
+        hasSubsequence(Cons(h, t), tt)
+      }
+    }
+    case (Nil, Cons(h, t)) => true
+    case (Nil, Nil) => true
+    case _ => false
   }
 }
