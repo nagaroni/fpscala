@@ -1,16 +1,13 @@
 package fpscala.purelyfunctionalstate.simplerng
 
-import java.util.Random
-;
-
 trait RNG {
   def nextInt: (Int, RNG)
   def double(rng: RNG): (Double, RNG)
   def intDouble(rng: RNG): ((Int, Double), RNG)
   def doubleInt(rng: RNG): ((Double, Int), RNG)
   def double3(rng: RNG): ((Double, Double, Double), RNG)
+  def unit[A](a: A): Rand[A] = rng => (a.asInstanceOf[A], rng)
 }
-
 type Rand[+A] = RNG => (A, RNG)
 
 case class SimpleRNG(seed: Long) extends RNG {
@@ -21,14 +18,14 @@ case class SimpleRNG(seed: Long) extends RNG {
     (n, nextRNG)
   }
 
-  def double(rng: RNG): (Double, RNG) = {
-    val tuple = rng.nextInt
-    val number = tuple._1 / Int.MaxValue.toDouble
+  def int: Rand[Int] = _.nextInt
 
-    if (number > 0 && number < 1) {
-      (number, tuple._2)
+  def double(rng: RNG): (Double, RNG) = {
+    val (number, rng2) = map(nonNegativeEven)(i => i / Int.MaxValue.toDouble)(rng)
+    if ( number > 0 && number < 1) {
+      unit(number)(rng2)
     } else {
-      double(tuple._2)
+      double(rng2)
     }
   }
 
@@ -41,18 +38,15 @@ case class SimpleRNG(seed: Long) extends RNG {
     }
   }
 
-  def intDouble(rng: RNG): ((Int, Double), RNG) = {
-    val randInt = rng.nextInt
-    val randDouble = rng.double(randInt._2)
+  def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
+    map2(ra, rb)((_, _))
 
-    ((randInt._1, randDouble._1), randDouble._2)
+  def intDouble(rng: RNG): ((Int, Double), RNG) = {
+    both(int, double)(rng)
   }
 
   def doubleInt(rng: RNG): ((Double, Int), RNG) = {
-    val randInt = rng.nextInt
-    val randDouble = rng.double(randInt._2)
-
-    ((randDouble._1, randInt._1), randDouble._2)
+    map2(double, int)((_, _))(rng)
   }
 
   def double3(rng: RNG): ((Double, Double, Double), RNG) = {
@@ -75,10 +69,14 @@ case class SimpleRNG(seed: Long) extends RNG {
 
   def map[A, B](s: Rand[A])(f: A => B): Rand[B] = rng => {
     val (a, rng2) = s(rng)
-    (f(a), rng2)
+    (f(a).asInstanceOf[B], rng2)
   }
 
-  def unit[A](a: A): Rand[A] = rng => (a, rng)
-
   def nonNegativeEven: Rand[Int] = map(nonNegativeInt)(i => i - i % 2)
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = rng => {
+    val (a, ra1) = ra(rng)
+    val (b, rb1) = rb(ra1)
+
+    (f(a, b), rb1)
+  }
 }
