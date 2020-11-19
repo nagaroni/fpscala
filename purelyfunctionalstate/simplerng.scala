@@ -1,21 +1,19 @@
 package fpscala.purelyfunctionalstate.simplerng
 
 case class State[S, +A](run: S => (A, S)) {
-  def map[B](f: A => B) : S => (B, S) = flatMap(a => (s) => (f(a), s))
-  def map2[B, C](other: S => (B, S))(f: (A, B) => C) : S => (C, S) = flatMap(a => State.flatMap(other)(b => ss => (f(a, b), ss)))
-  def flatMap[B](g: A => S => (B, S)) : S => (B, S) = State.flatMap(run)(g)
+  def map[B](f: A => B) : State[S, B] = flatMap(a => State.unit(f(a)))
+  def map2[B, C](other: State[S, B])(f: (A, B) => C) : State[S, C] =
+    flatMap(a => other.map(b => f(a, b)))
+  def flatMap[B](g: A => State[S, B]) : State[S, B] = State(s => {
+    val (a, ss) = run(s)
+    g(a).run(ss)
+  })
 }
 object State {
-  def sequence[S, A](fs: List[S => (A, S)]) : S => (List[A], S) = s => {
-    fs.foldRight((List[A](), s))((nextS, acc) => {
-      val (v, ss) = nextS(acc._2)
-      (acc._1 ::: List(v), ss)
-    })
-  }
-  def flatMap[S, A, B](f: S => (A, S))(g: A => S => (B, S)) : S => (B, S) = s => {
-    val (v, ss) = f(s)
-    g(v)(ss)
-  }
+  def unit[S, A](value: A) : State[S, A] = State(s => (value, s))
+  def sequence[S, A](fs: List[State[S, A]]) : State[S, List[A]] = State(s => {
+    fs.foldRight((List[A](), s))((state, acc) => state.map(value => acc._1 ::: List[A](value)).run(acc._2))
+  })
 }
 
 trait RNG {
@@ -24,7 +22,7 @@ trait RNG {
   def intDouble(rng: RNG): ((Int, Double), RNG)
   def doubleInt(rng: RNG): ((Double, Int), RNG)
   def double3(rng: RNG): ((Double, Double, Double), RNG)
-  def unit[A](a: A): Rand[A] = rng => (a.asInstanceOf[A], rng)
+  def unit[A](a: A): (RNG) => (A, RNG) = rng => (a.asInstanceOf[A], rng)
 }
 
 type Rand[+A] = RNG => (A, RNG)
