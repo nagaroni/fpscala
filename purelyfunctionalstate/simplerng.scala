@@ -85,7 +85,7 @@ case class SimpleRNG(seed: Long) extends RNG {
   }
 
   def intsWithSequence(count: Int)(rng: RNG): (List[Int], RNG) = {
-    State.sequence(List.fill(count)((f: RNG) => f.nextInt))(rng)
+    sequence(List.fill(count)((f: RNG) => f.nextInt))(rng)
   }
 
   def map[A, B](s: Rand[A])(f: A => B): Rand[B] = rng => {
