@@ -13,7 +13,7 @@ case class State[S, +A](run: S => (A, S)) {
 object State {
   def unit[S, A](value: A) : State[S, A] = State(s => (value, s))
   def sequence[S, A](fs: List[State[S, A]]) : State[S, List[A]] = State(s => {
-    fs.foldRight((List[A](), s))((state, acc) => state.map(value => acc._1 ::: List[A](value)).run(acc._2))
+    fs.foldLeft((List[A](), s))((acc, state) => state.map(value => List[A](value) ::: acc._1).run(acc._2))
   })
   def modify[S](f: S => S) : State[S, Unit] = for {
     s <- get
@@ -28,20 +28,22 @@ case object Coin extends Input
 case object Turn extends Input
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
-class CandyDispenser(machine: Machine) {
+class CandyDispenser {
   def operate = (input: Input) => (machine: Machine) => (input, machine) match {
     case (_, Machine(_, 0, _)) => machine
     case (Coin, Machine(false, _, _)) => machine
     case (Turn, Machine(true, _, _)) => machine
     case (Coin, Machine(true, candies, coins)) => Machine(false, candies, coins + 1)
-    case (Turn, Machine(false, candies, coins)) => Machine(true, candies -1, coins)
+    case (Turn, Machine(false, candies, coins)) => Machine(true, candies - 1, coins)
     case _ => Machine(true, 0, 0)
   }
 
   def simulateMachine(inputs: List[Input]) : State[Machine, (Int, Int)] = {
     val ds = State[Machine, Machine](s => (s, s))
     val transform = (m: Machine) => State[Machine, Machine](_ => (m, m))
-    inputs.foldRight(ds)((input, state) => State[Machine, Machine](s => state.map(operate(input))))
+    inputs.foldLeft(ds)(
+      (state, input) => state.flatMap(s => transform(operate(input)(s)))
+    ).map(x => (x.candies, x.coins))
   }
 
   def simulateMachineWithFor(inputs: List[Input]) : State[Machine, (Int, Int)] = for {
