@@ -14,6 +14,6 @@ def sum(ints: IndexedSeq[Int]): Par[Int] = {
     Par.unit(ints.headOption.getOrElse(0))
   } else {
     val (l, r) = ints.splitAt(ints.length/2)
-    Par.map2(sum(l), sum(r))(_ + _)
+    Par.map2(Par.fork(sum(l)), Par.fork(sum(r)))(_ + _)
   }
 }
