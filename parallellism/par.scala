@@ -2,8 +2,10 @@ package parallellism.par
 
 case class Par[+A](value: A)
 case object Par {
-  def unit[A](value: => A): Par[A] = Par[A](value)
+  def unit[A](value: A): Par[A] = Par[A](value)
   def get[A](par: Par[A]): A = par.value
+  def fork[A](value: => Par[A]): Par[A] = value
+  def lazyUnit[A](value: => A) : Par[A] = fork(unit(a))
   def map2[A, C](a: Par[A], b: Par[A])(f: (A, A) => C) : Par[C] = {
     Par(f(a.value, b.value))
   }
